@@ -1,0 +1,11 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: kafka-ui
+  labels:
+    strimzi.io/cluster: cluster-simple-auth
+  namespace: trailblazers
+spec:
+  authentication:
+    type: tls
+

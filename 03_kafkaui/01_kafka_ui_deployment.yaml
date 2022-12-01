@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui-deployment
+  namespace: trailblazers
+  labels:
+    app: kafka-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-ui
+  template:
+    metadata:
+      labels:
+        app: kafka-ui
+    spec:
+      volumes:
+        - name: registry-kafkasql-tls-keystore
+          secret:
+            secretName: kafka-ui
+            defaultMode: 420
+        - name: registry-kafkasql-tls-truststore
+          secret:
+            secretName: cluster-simple-auth-cluster-ca-cert
+            defaultMode: 420
+      containers:
+        - resources:
+            limits:
+              cpu: '1'
+              memory: 1300Mi
+            requests:
+              cpu: 500m
+              memory: 512Mi
+          name: kafka-ui
+          env:
+            - name: KAFKA_CLUSTERS_0_NAME
+              value: cluster-simple-auth
+            - name: KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL
+              value: SSL
+            - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+              value: >-
+                cluster-simple-auth-kafka-bootstrap.trailblazers.svc.cluster.local:9093
+            - name: KAFKA_CLUSTERS_0_ZOOKEEPER
+              value: >-
+                cluster-simple-auth-zookeeper-client.trailblazers.svc.cluster.local:2181
+            - name: KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION
+              value: /etc/registry-kafkasql-tls-keystore/user.p12
+            - name: KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-ui
+                  key: user.password
+            - name: KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION
+              value: /etc/registry-kafkasql-tls-truststore/ca.p12
+            - name: KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cluster-simple-auth-cluster-ca-cert
+                  key: ca.password
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: registry-kafkasql-tls-keystore
+              readOnly: true
+              mountPath: etc/registry-kafkasql-tls-keystore
+            - name: registry-kafkasql-tls-truststore
+              readOnly: true
+              mountPath: etc/registry-kafkasql-tls-truststore
+          terminationMessagePolicy: File
+          image: 'provectuslabs/kafka-ui:latest'
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+

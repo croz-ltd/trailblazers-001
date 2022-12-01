@@ -1,0 +1,14 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: kafka-ui
+  namespace: trailblazers
+spec:
+  host: kafka-ui-trailblazers.apps-crc.testing
+  to:
+    kind: Service
+    name: kafka-ui-service
+    weight: 100
+  port:
+    targetPort: 8080
+  wildcardPolicy: None

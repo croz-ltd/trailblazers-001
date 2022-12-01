@@ -1,0 +1,1 @@
+crc oc-env --shell powershell | Invoke-Expression
